@@ -1,324 +1,211 @@
 <!DOCTYPE html>
-<html lang="ceb">
+<html lang="en">
 <head>
-    <title>COD PWA Aimbot/ESP - FULL FIX 2026</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="manifest" id="manifest-link">
-    <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; background: black; font-family: Arial; overflow: hidden; color: white; }
-        #video { display: none; }
-        #canvas, #overlay { position: absolute; top: 0; left: 0; }
-        #overlay { pointer-events: none; z-index: 5; }
-        #controls {
-            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px;
-            z-index: 10; max-width: 350px; font-size: 12px; backdrop-filter: blur(10px); border: 1px solid #333;
-        }
-        #controls label { display: block; margin: 8px 0 4px; }
-        #controls input, #controls select { width: 70px; margin-left: 5px; }
-        #info { font-weight: bold; color: lime; font-size: 14px; margin-top: 10px; }
-        button { margin: 2px 0; padding: 6px 12px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #666; }
-        button.active { background: lime; }
-        #togglecontrols { position: absolute; top: 5px; right: 5px; font-size: 16px; }
-        #ahk-section { margin-top: 15px; font-size: 11px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; }
-        #ahkcode { width: 100%; height: 100px; background: #111; color: lime; font-family: monospace; font-size: 10px; }
-        #fps { font-size: 11px; color: cyan; }
-    </style>
+<meta charset="UTF-8">
+<title>CODM Injector UI — Mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#111,#000 60%);
+  font-family:Segoe UI,Tahoma,sans-serif;
+  color:#eaeaea;
+  overflow:hidden;
+}
+
+/* Main Panel */
+#injector{
+  width:360px;
+  position:fixed;
+  top:20px;
+  left:20px;
+  background:rgba(10,10,10,.95);
+  border-radius:18px;
+  border:1px solid #1f1f1f;
+  box-shadow:0 0 25px rgba(0,255,0,.35), inset 0 0 20px rgba(0,0,0,.8);
+  padding:18px;
+}
+
+/* Header */
+#header{
+  text-align:center;
+  margin-bottom:12px;
+}
+#header h1{
+  margin:0;
+  font-size:20px;
+  color:#00ff6a;
+  text-shadow:0 0 6px #00ff6a,0 0 14px #00ff6a;
+}
+
+/* 🔥 GLOWING DEVELOPER */
+#dev{
+  margin-top:4px;
+  font-size:12px;
+  font-weight:bold;
+  color:#00ffff;
+  animation:devGlow 1.5s infinite alternate;
+  cursor:pointer;
+}
+@keyframes devGlow{
+  from{
+    text-shadow:0 0 4px #0ff,0 0 8px #0ff;
+  }
+  to{
+    text-shadow:0 0 8px #0ff,0 0 16px #0ff,0 0 28px #00ffff;
+  }
+}
+
+/* Section */
+.section{
+  margin-top:14px;
+  padding:10px;
+  border-radius:12px;
+  background:rgba(0,0,0,.55);
+  border:1px solid #222;
+}
+.section h2{
+  margin:0 0 8px;
+  font-size:13px;
+  color:#00ffaa;
+  text-shadow:0 0 4px #00ffaa;
+}
+
+/* Toggle */
+.toggle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:6px 0;
+  font-size:12px;
+  cursor:pointer;
+}
+.switch{
+  width:44px;
+  height:22px;
+  background:#222;
+  border-radius:22px;
+  position:relative;
+  box-shadow:inset 0 0 6px #000;
+  transition:.25s;
+}
+.switch::after{
+  content:"";
+  position:absolute;
+  width:18px;
+  height:18px;
+  top:2px;
+  left:2px;
+  background:#555;
+  border-radius:50%;
+  transition:.25s;
+  box-shadow:0 0 6px #000;
+}
+.switch.active{
+  background:#00ff6a;
+  box-shadow:0 0 10px #00ff6a;
+}
+.switch.active::after{
+  left:24px;
+  background:#000;
+}
+
+/* Slider */
+.slider{
+  width:100%;
+  font-size:11px;
+}
+.slider input{
+  width:100%;
+}
+
+/* Footer */
+#footer{
+  margin-top:12px;
+  font-size:11px;
+  color:#0ff;
+  text-align:center;
+  text-shadow:0 0 4px #0ff;
+}
+.badge{
+  display:inline-block;
+  margin-top:6px;
+  padding:4px 10px;
+  border-radius:20px;
+  background:#00ff6a;
+  color:#000;
+  font-weight:bold;
+  font-size:11px;
+  box-shadow:0 0 10px #00ff6a;
+}
+</style>
 </head>
 <body>
-    <video id="video" autoplay muted playsinline></video>
-    <canvas id="canvas"></canvas>
-    <canvas id="overlay"></canvas>
-    <div id="controls">
-        <button id="togglecontrols">−</button>
-        <button id="start">🚀 Start Capture</button>
-        <button id="stop">⏹️ Stop</button>
-        <button id="fullscreen">📱 Fullscreen</button>
-        <button id="install" style="display:none">💾 Install PWA</button>
-        <label>Preset: <select id="preset">
-            <option value="red">Red Outline</option>
-            <option value="purple">Purple</option>
-            <option value="yellow">Yellow</option>
-            <option value="cyan">Cyan</option>
-        </select></label>
-        <label>FOV Radius: <input id="fov" type="range" min="30" max="500" value="120"><span id="fovval">120</span>px</label>
-        <label>Min Hits: <input id="minhits" type="number" value="15" min="5" max="100"></label>
-        <label>Smooth Frames: <input id="smooth" type="range" min="1" max="10" value="4"><span id="smoothval">4</span></label>
-        <hr>
-        <label>R: <input id="rmin" type="number" min="0" max="255">−<input id="rmax" type="number" min="0" max="255"></label>
-        <label>G: <input id="gmin" type="number" min="0" max="255">−<input id="gmax" type="number" min="0" max="255"></label>
-        <label>B: <input id="bmin" type="number" min="0" max="255">−<input id="bmax" type="number" min="0" max="255"></label>
-        <button id="initfile">📄 Init AHK File (Full Auto)</button>
-        <div id="fileinfo" style="color:orange; font-size:11px;"></div>
-        <div id="info">🎯 Ready - Use http://localhost:8000!</div>
-        <div id="fps"></div>
-        <div id="ahk-section">
-            <button id="copyahk">📋 Copy AHK Script</button>
-            <textarea id="ahkcode" readonly>#NoEnv
-#SingleInstance Force
-SetMouseDelay, 1
-SetDefaultMouseSpeed, 0
 
-SetTimer, ReadAim, 10  ; Super fast poll ~100hz
-return
+<div id="injector">
+  <div id="header">
+    <h1>CODM INJECTOR</h1>
+    <div id="dev">Developer: Loyd Balaba</div>
+  </div>
 
-ReadAim:
-FileRead, aimdata, aimlog.txt
-if (aimdata != "") {
-    StringSplit, pos, aimdata, %A_Space%
-    dx := pos1 + 0
-    dy := pos2 + 0
-    if (dx != 0 || dy != 0) {
-        MouseMove, %dx%, %dy%, 8, R  ; Smooth human-like speed (tune 5-12)
-    }
-}
-return
+  <div class="section">
+    <h2>ESP / WALLHACK</h2>
+    <div class="toggle"><span>Wallhack (Boxes)</span><div class="switch active"></div></div>
+    <div class="toggle"><span>Skeleton ESP</span><div class="switch"></div></div>
+    <div class="toggle"><span>Health Bar</span><div class="switch active"></div></div>
+    <div class="toggle"><span>Distance ESP</span><div class="switch"></div></div>
+  </div>
 
-F12::ExitApp  ; Emergency stop</textarea>
-        </div>
+  <div class="section">
+    <h2>AIMBOT</h2>
+    <div class="toggle"><span>Aimbot 360°</span><div class="switch active"></div></div>
+    <div class="toggle"><span>Aim Assist</span><div class="switch"></div></div>
+    <div class="toggle"><span>No Recoil</span><div class="switch active"></div></div>
+    <div class="toggle"><span>Auto ADS</span><div class="switch"></div></div>
+    <div class="slider">
+      FOV
+      <input type="range" min="1" max="360" value="180">
     </div>
-    <script>
-        // PWA Setup
-        let installPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            installPrompt = e;
-            document.getElementById('install').style.display = 'inline-block';
-        });
-        document.getElementById('install').onclick = () => installPrompt?.prompt();
+  </div>
 
-        // Manifest
-        const manifest = {
-            name: "COD Aimbot PWA 2026",
-            short_name: "CodAimFix",
-            icons: [{ src: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSI5NiIgY3k9Ijk2IiByPSI5NiIgZmlsbD0iI0ZGMDAwMCIvPjxjaXJjbGUgY3g9Ijc1IiBjeT0iNzUiIHI9IjE1IiBmaWxsPSJ3aGl0ZSIvPjxjaXJjbGUgY3g9IjExNyIgY3k9Ijc1IiByPSIxNSIgZmlsbD0id2hpdGUiLz48L3N2Zz4K", sizes: "192x192", type: "image/svg+xml" }],
-            start_url: "./", display: "standalone", theme_color: "#000", background_color: "#000"
-        };
-        document.getElementById('manifest-link').href = 'data:application/json,' + encodeURIComponent(JSON.stringify(manifest));
+  <div class="section">
+    <h2>MOVEMENT</h2>
+    <div class="toggle"><span>Speed Hack</span><div class="switch active"></div></div>
+    <div class="toggle"><span>Slide Boost</span><div class="switch"></div></div>
+    <div class="slider">
+      Speed Level
+      <input type="range" min="1" max="10" value="6">
+    </div>
+  </div>
 
-        // Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(URL.createObjectURL(new Blob([`
-                self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
-                self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-            `], {type: 'application/javascript'})));
-        }
+  <div class="section">
+    <h2>EXTRA</h2>
+    <div class="toggle"><span>Radar Hack</span><div class="switch"></div></div>
+    <div class="toggle"><span>FPS Boost</span><div class="switch active"></div></div>
+    <div class="toggle"><span>Anti Shake</span><div class="switch"></div></div>
+  </div>
 
-        // Vars
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const overlay = document.getElementById('overlay');
-        const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
-        const octx = overlay.getContext('2d', { alpha: true });
-        let stream = null, raf = null, processing = false;
-        let targets = [], currentAim = '0 0';
-        let writable = null, writing = false;
-        let lastTime = 0, fps = 0;
+  <div id="footer">
+    STATUS: INJECTED (VISUAL ONLY)
+    <div class="badge">SAFE UI MODE</div>
+  </div>
+</div>
 
-        // Controls
-        document.getElementById('togglecontrols').onclick = () => {
-            const controls = document.getElementById('controls');
-            controls.style.display = controls.style.display === 'none' ? 'block' : 'none';
-        };
-        document.getElementById('fullscreen').onclick = () => document.documentElement.requestFullscreen?.() || document.body.requestFullscreen?.();
-        document.getElementById('copyahk').onclick = () => {
-            navigator.clipboard.writeText(document.getElementById('ahkcode').value).then(() => alert('AHK copied! Save as aim.ahk & run.'));
-        };
-        document.getElementById('fov').oninput = e => document.getElementById('fovval').textContent = e.target.value;
-        document.getElementById('smooth').oninput = e => document.getElementById('smoothval').textContent = e.target.value;
-        document.getElementById('preset').onchange = loadPreset;
+<script>
+/* CLICKABLE TOGGLES */
+document.querySelectorAll('.toggle').forEach(t=>{
+  t.addEventListener('click',()=>{
+    const sw=t.querySelector('.switch');
+    sw.classList.toggle('active');
+  });
+});
 
-        // File for AHK
-        document.getElementById('initfile').onclick = async () => {
-            try {
-                const handle = await window.showSaveFilePicker({
-                    suggestedName: 'aimlog.txt',
-                    types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt'] } }]
-                });
-                writable = await handle.createWritable({ keepPreviousData: false });
-                document.getElementById('fileinfo').textContent = '✅ File ready! AHK will auto-aim now.';
-                document.getElementById('fileinfo').style.color = 'lime';
-            } catch (e) {
-                document.getElementById('fileinfo').textContent = '❌ File access denied.';
-                document.getElementById('fileinfo').style.color = 'red';
-            }
-        };
+/* Developer click easter egg */
+document.getElementById('dev').onclick=()=>{
+  alert("UI designed by Loyd Balaba 🔥");
+};
+</script>
 
-        // Presets & Load Config
-        function loadPreset(p = 'red') {
-            const vals = {
-                red: {rmin:200,rmax:255,gmin:0,gmax:60,bmin:0,bmax:60},
-                purple: {rmin:150,rmax:255,gmin:0,gmax:80,bmin:120,bmax:255},
-                yellow: {rmin:220,rmax:255,gmin:180,rmax:255,bmin:0,bmax:80},
-                cyan: {rmin:0,rmax:80,gmin:180,rmax:255,bmin:180,bmax:255}
-            };
-            const v = vals[p];
-            ['rmin','rmax','gmin','gmax','bmin','bmax'].forEach(id => document.getElementById(id).value = v[id.slice(0,-3)] || v[id]);
-        }
-        function saveConfig() {
-            const config = {
-                fov: document.getElementById('fov').value,
-                minhits: document.getElementById('minhits').value,
-                smooth: document.getElementById('smooth').value,
-                preset: document.getElementById('preset').value
-            };
-            localStorage.setItem('codaim', JSON.stringify(config));
-        }
-        function loadConfig() {
-            const config = JSON.parse(localStorage.getItem('codaim') || '{}');
-            document.getElementById('fov').value = config.fov || 120;
-            document.getElementById('fovval').textContent = config.fov || 120;
-            document.getElementById('minhits').value = config.minhits || 15;
-            document.getElementById('smooth').value = config.smooth || 4;
-            document.getElementById('smoothval').textContent = config.smooth || 4;
-            document.getElementById('preset').value = config.preset || 'red';
-            loadPreset(config.preset || 'red');
-        }
-        loadConfig();
-        // Save on change
-        document.querySelectorAll('#controls input, #controls select').forEach(el => el.onchange = saveConfig);
-
-        // Start
-        document.getElementById('start').onclick = async () => {
-            const infoEl = document.getElementById('info');
-            if (!window.isSecureContext) {
-                infoEl.textContent = '❌ ERROR: Not secure! Run: python3 -m http.server 8000 → http://localhost:8000';
-                infoEl.style.color = 'red';
-                return;
-            }
-            if (!navigator.mediaDevices?.getDisplayMedia) {
-                infoEl.textContent = '❌ ERROR: getDisplayMedia not supported. Use Chrome/Edge.';
-                infoEl.style.color = 'red';
-                return;
-            }
-            try {
-                stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { mediaSource: 'screen', frameRate: {ideal:60} }
-                });
-                video.srcObject = stream;
-                await new Promise(r => video.onloadedmetadata = r);
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                overlay.width = canvas.width;
-                overlay.height = canvas.height;
-                overlay.style.width = `${canvas.width}px`;
-                overlay.style.height = `${canvas.height}px`;
-                document.body.style.width = `${canvas.width}px`;
-                document.body.style.height = `${canvas.height}px`;
-                targets = [];
-                processing = true;
-                processFrame();
-                infoEl.textContent = '✅ Capturing! Tune colors & play.';
-                infoEl.style.color = 'lime';
-            } catch (err) {
-                if (err.name === 'NotAllowedError') {
-                    infoEl.textContent = '❌ Permission denied. Allow screen share.';
-                } else {
-                    infoEl.textContent = `❌ Capture failed: ${err.message}`;
-                }
-                infoEl.style.color = 'red';
-            }
-        };
-
-        // Stop
-        document.getElementById('stop').onclick = () => {
-            if (stream) stream.getTracks().forEach(t => t.stop());
-            if (raf) cancelAnimationFrame(raf);
-            processing = false;
-            octx.clearRect(0, 0, canvas.width, canvas.height);
-            targets = [];
-            document.getElementById('info').textContent = '⏹️ Stopped';
-            if (writable) writable.close();
-            writable = null;
-            document.getElementById('fileinfo').textContent = '';
-        };
-
-        function isEnemy(r, g, b) {
-            const rmin = +document.getElementById('rmin').value, rmax = +document.getElementById('rmax').value;
-            const gmin = +document.getElementById('gmin').value, gmax = +document.getElementById('gmax').value;
-            const bmin = +document.getElementById('bmin').value, bmax = +document.getElementById('bmax').value;
-            return r >= rmin && r <= rmax && g >= gmin && g <= gmax && b >= bmin && b <= bmax;
-        }
-
-        function processFrame(now = 0) {
-            if (!processing) return;
-            fps = Math.round(1000 / (now - lastTime));
-            lastTime = now;
-            document.getElementById('fps').textContent = `FPS: ${fps}`;
-
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
-            const w = canvas.width, h = canvas.height;
-            const cx = w / 2, cy = h / 2;
-            const radius = +document.getElementById('fov').value;
-            const minHits = +document.getElementById('minhits').value;
-            const smoothN = +document.getElementById('smooth').value;
-
-            let sumX = 0, sumY = 0, count = 0;
-            const step = 2;  // Better perf
-
-            for (let y = Math.max(0, cy - radius); y < Math.min(h, cy + radius); y += step) {
-                for (let x = Math.max(0, cx - radius); x < Math.min(w, cx + radius); x += step) {
-                    const i = (Math.floor(y) * w + Math.floor(x)) * 4;
-                    const r = data[i], g = data[i+1], b = data[i+2];
-                    if (isEnemy(r, g, b)) {
-                        sumX += x; sumY += y; count++;
-                    }
-                }
-            }
-
-            // Overlay clear
-            octx.clearRect(0, 0, w, h);
-
-            // FOV Circle
-            octx.strokeStyle = 'yellow'; octx.lineWidth = 3;
-            octx.beginPath(); octx.arc(cx, cy, radius, 0, Math.PI*2); octx.stroke();
-
-            // Crosshair
-            octx.strokeStyle = 'white'; octx.lineWidth = 2;
-            octx.beginPath();
-            octx.moveTo(cx-40, cy); octx.lineTo(cx+40, cy);
-            octx.moveTo(cx, cy-40); octx.lineTo(cx, cy+40);
-            octx.stroke();
-
-            let info = `No target (${count} hits)`;
-            if (count >= minHits) {
-                const rawX = sumX / count, rawY = sumY / count;
-                targets.push({x: rawX, y: rawY});
-                if (targets.length > smoothN) targets.shift();
-                const avgX = targets.reduce((a,b)=>a+b.x,0) / targets.length;
-                const avgY = targets.reduce((a,b)=>a+b.y,0) / targets.length;
-                const dx = avgX - cx, dy = avgY - cy;
-                const dist = Math.hypot(dx, dy);
-
-                // Target Box
-                octx.strokeStyle = 'lime'; octx.lineWidth = 4; octx.strokeRect(avgX-30, avgY-60, 60, 120);
-
-                // Aim Line (thick fade)
-                const grad = octx.createLinearGradient(cx, cy, avgX, avgY);
-                grad.addColorStop(0, 'red'); grad.addColorStop(1, 'yellow');
-                octx.strokeStyle = grad; octx.lineWidth = 6; octx.lineCap = 'round';
-                octx.beginPath(); octx.moveTo(cx, cy); octx.lineTo(avgX, avgY); octx.stroke();
-
-                // Console & File
-                console.log(`Aim: ${Math.round(dx)} ${Math.round(dy)} dist:${Math.round(dist)} hits:${count} fps:${fps}`);
-                const newAim = `${Math.round(dx)} ${Math.round(dy)}`;
-                if (newAim !== currentAim) {
-                    currentAim = newAim;
-                    if (writable && !writing) {
-                        writing = true;
-                        writable.write(currentAim + '\n').finally(() => writing = false);
-                    }
-                }
-
-                info = `🎯 TARGET: ${Math.round(dist)}px | dx:${Math.round(dx)} dy:${Math.round(dy)} | ${count} hits | ${fps}fps`;
-            }
-            document.getElementById('info').textContent = info;
-
-            raf = requestAnimationFrame(processFrame);
-        }
-    </script>
 </body>
 </html>
