@@ -1,117 +1,251 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Messenger</title>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<style>
-body{margin:0;font-family:sans-serif;background:#f0f2f5}
-#login{padding:20px}
-#app{display:flex;height:100vh}
-#inbox{width:30%;background:#fff;border-right:1px solid #ccc;overflow:auto}
-.user{padding:15px;cursor:pointer}
-.user:hover{background:#eee}
-#chat{flex:1;display:flex;flex-direction:column}
-#msgs{flex:1;overflow:auto;padding:10px}
-.me{background:#0084ff;color:#fff;margin:5px;padding:10px;border-radius:15px;align-self:flex-end}
-.them{background:#e4e6eb;margin:5px;padding:10px;border-radius:15px;align-self:flex-start}
-#typing{font-size:12px;color:#555;margin-left:10px}
-input,button{padding:10px;margin:5px}
-</style>
+  <title>Secure Group Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e6ecf0;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 600px;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      height: 80vh;
+      overflow: hidden;
+    }
+
+    h2 {
+      text-align: center;
+      padding: 15px;
+      margin: 0;
+      background: #4a76a8;
+      color: #fff;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      font-size: 1.5rem;
+    }
+
+    #loginForm {
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #loginForm input {
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    #loginBtn, #logoutBtn {
+      padding: 10px 12px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-bottom: 5px;
+      transition: 0.2s;
+    }
+
+    #loginBtn { background: #4a76a8; color: #fff; }
+    #loginBtn:hover { background: #3b5f87; }
+
+    #logoutBtn { background: #e74c3c; color: #fff; display:none; }
+    #logoutBtn:hover { background: #c0392b; }
+
+    #chat {
+      flex-grow: 1;
+      list-style: none;
+      padding: 15px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      background: #f9f9f9;
+    }
+
+    .message {
+      max-width: 70%;
+      margin-bottom: 12px;
+      padding: 10px 15px;
+      border-radius: 20px;
+      word-wrap: break-word;
+      display: inline-block;
+      clear: both;
+      font-size: 0.95rem;
+    }
+
+    .message.user {
+      background: #dcf8c6;
+      align-self: flex-end;
+      border-bottom-right-radius: 5px;
+    }
+
+    .message.other {
+      background: #eee;
+      align-self: flex-start;
+      border-bottom-left-radius: 5px;
+    }
+
+    .username { font-weight: bold; display: block; margin-bottom: 3px; }
+    .timestamp { font-size: 0.7rem; color: #666; margin-top: 3px; display: block; text-align: right; }
+
+    #form {
+      display: flex;
+      padding: 10px 15px;
+      border-top: 1px solid #ddd;
+      background: #fafafa;
+    }
+
+    #message {
+      flex-grow: 1;
+      padding: 10px 15px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      margin-right: 10px;
+      font-size: 1rem;
+    }
+
+    #sendBtn {
+      padding: 10px 20px;
+      border: none;
+      background: #4a76a8;
+      color: #fff;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: 0.2s;
+    }
+
+    #sendBtn:hover { background: #3b5f87; }
+  </style>
 </head>
 <body>
 
-<div id="login">
-  <input id="u" placeholder="Username">
-  <input id="p" placeholder="Password">
-  <button onclick="register()">Create Account</button>
-  <button onclick="login()">Login</button>
-</div>
+<div class="chat-container">
+  <h2>Secure Group Chat</h2>
 
-<div id="app" style="display:none">
-  <div id="inbox"></div>
-  <div id="chat">
-    <div id="msgs"></div>
-    <div id="typing"></div>
-    <div>
-      <input id="text" placeholder="Type a message" oninput="typingEvent()">
-      <button onclick="send()">Send</button>
-    </div>
+  <div id="loginForm">
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button id="loginBtn">Login / Set User</button>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <ul id="chat"></ul>
+
+  <div id="form" style="display:none;">
+    <input id="message" placeholder="Type your message">
+    <button id="sendBtn">Send</button>
   </div>
 </div>
 
+<script src="https://tunnelling-website.onrender.com/socket.io/socket.io.js"></script>
 <script>
-const API = "https://tunnelling-website.onrender.com";
-const socket = io(API);
+const SERVER_URL = "https://tunnelling-website.onrender.com";
+const socket = io(SERVER_URL);
 
-let me = {}, target = {}, convoId = null;
+const chat = document.getElementById("chat");
+const loginForm = document.getElementById("loginForm");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
+const formDiv = document.getElementById("form");
+const messageInput = document.getElementById("message");
+const sendBtn = document.getElementById("sendBtn");
 
-function register(){
- fetch(API+"/register",{
-  method:"POST",
-  headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({username:u.value,password:p.value})
- });
+let currentUser = "";
+
+// Check localStorage for existing user
+const savedUser = localStorage.getItem("groupChatUser");
+if(savedUser){
+  currentUser = savedUser;
+  loginForm.style.display = "none";
+  formDiv.style.display = "flex";
+  logoutBtn.style.display = "block";
 }
 
-function login(){
- fetch(API+"/login",{
-  method:"POST",
-  headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({username:u.value,password:p.value})
- }).then(r=>r.json()).then(d=>{
-  me=d;
-  socket.emit("join",me.id);
-  login.style.display="none";
-  app.style.display="flex";
-  loadUsers();
- });
-}
+// Login / set username
+loginBtn.addEventListener("click", () => {
+  const user = usernameInput.value.trim();
+  const pass = passwordInput.value.trim();
+  if(!user || !pass) return alert("Enter username and password!");
 
-function loadUsers(){
- fetch(API+"/users").then(r=>r.json()).then(data=>{
-  inbox.innerHTML=data
-   .filter(x=>x.id!==me.id)
-   .map(u=>`<div class="user" onclick="openChat('${u.id}')">${u.username}</div>`)
-   .join("");
- });
-}
+  localStorage.setItem("groupChatUser", user);
+  localStorage.setItem("groupChatPass", pass);
+  currentUser = user;
 
-function openChat(id){
- target.id=id;
- msgs.innerHTML="";
- convoId=null;
-}
-
-function send(){
- socket.emit("sendMessage",{from:me.id,to:target.id,text:text.value});
- text.value="";
-}
-
-function typingEvent(){
- socket.emit("typing",target.id);
-}
-
-socket.on("newMessage",m=>{
- if(
-  (m.sender===me.id && m.receiver===target.id) ||
-  (m.sender===target.id && m.receiver===me.id)
- ){
-  convoId=m.convoId;
-  show(m);
-  socket.emit("markSeen", convoId);
- }
+  loginForm.style.display = "none";
+  formDiv.style.display = "flex";
+  logoutBtn.style.display = "block";
 });
 
-socket.on("typing",()=>typing.innerText="typing...");
-socket.on("messageSeen",()=>typing.innerText="Seen");
+// Logout button
+logoutBtn.addEventListener("click", () => {
+  localStorage.removeItem("groupChatUser");
+  localStorage.removeItem("groupChatPass");
+  currentUser = "";
+  loginForm.style.display = "flex";
+  formDiv.style.display = "none";
+  logoutBtn.style.display = "none";
+});
 
-function show(m){
- const d=document.createElement("div");
- d.className=m.sender===me.id?"me":"them";
- d.textContent=m.text;
- msgs.appendChild(d);
- msgs.scrollTop=msgs.scrollHeight;
+// Load previous messages
+socket.on("loadMessages", messages => messages.forEach(addMessage));
+
+// Receive new messages
+socket.on("chatMessage", addMessage);
+
+// Send message
+sendBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keyup", e => { if(e.key==='Enter') sendMessage(); });
+
+function sendMessage(){
+  const text = messageInput.value.trim();
+  if(!currentUser || !text) return;
+  const timestamp = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  socket.emit("chatMessage", {user: currentUser, text, timestamp});
+  messageInput.value = "";
+}
+
+function addMessage(msg){
+  const li = document.createElement("li");
+  li.classList.add("message", msg.user===currentUser ? "user":"other");
+
+  // Hide username if the message is from current user
+  if(msg.user !== currentUser){
+    const usernameSpan = document.createElement("span");
+    usernameSpan.classList.add("username");
+    usernameSpan.textContent = msg.user;
+    li.appendChild(usernameSpan);
+  }
+
+  const textSpan = document.createElement("span");
+  textSpan.textContent = msg.text;
+  li.appendChild(textSpan);
+
+  const timeSpan = document.createElement("span");
+  timeSpan.classList.add("timestamp");
+  timeSpan.textContent = msg.timestamp || new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  li.appendChild(timeSpan);
+
+  chat.appendChild(li);
+  chat.scrollTop = chat.scrollHeight;
 }
 </script>
 
